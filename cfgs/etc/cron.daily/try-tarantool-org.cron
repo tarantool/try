@@ -1,0 +1,3 @@
+#!/bin/sh
+
+/usr/local/try-tarantool-org/container/tool.sh cron
