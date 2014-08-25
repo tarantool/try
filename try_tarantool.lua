@@ -15,7 +15,7 @@ local socket = require('socket')
 local SERVER_HOST = '0.0.0.0'
 local SERVER_PORT = '22222'
 local CONTAINER_PORT = '3313'
-local IP_LIMIT = 5
+local IP_LIMIT = 10
 local SOCKET_TIMEOUT = 0.2
 local START_LXC = 'sudo /usr/local/try-tarantool-org/container/tool.sh start '
 local RM_LXC = 'sudo /usr/local/try-tarantool-org/container/tool.sh stop '
@@ -29,6 +29,9 @@ local EXIT_ERROR = 'Attention! Server stopped your tarantool machine. Please, wa
 
 local ipt = {} -- Table with information about users try.tarantool session on ip
 local lxc = {} -- Table with information about user: id, ip, linux container host and id, last connection time
+local tfun = {} -- Table for start module function and redefine some function or value
+
+tfun['ipt'] = ipt -- For revoke limit count in try test
 
 -- Function start container
 
@@ -40,7 +43,7 @@ local function start_container(user_id)
     local host = inf[1]['NetworkSettings']['IPAddress']
     local lxc_id = inf[1]['ID']
     log.info('%s: Start container with host = %s lxc_id = %s ', user_id, host, lxc_id)
-    lxc[user_id] = { host = host, lxc_id = lxc_id }
+    return host, lxc_id
 end
 
 -- Function remove container
@@ -51,9 +54,12 @@ local function remove_container(user_id)
     local file = io.popen(RM_LXC..lxc_id)
     file:close()
     log.info('%s: Remove container with ID = %s', user_id, lxc_id)
-    ipt[lxc[user_id].ip] = ipt[lxc[user_id].ip] - 1
-    lxc[user_id] = nil
+    tfun.ipt[lxc[user_id].ip] = tfun.ipt[lxc[user_id].ip] - 1
 end
+
+tfun['CONTAINER_PORT'] = CONTAINER_PORT
+tfun['start_conrainer'] = start_container
+tfun['remove_container'] = remove_container
 
 -- Function remove all container that not used
 
@@ -63,7 +69,9 @@ local function clear_lxc()
         t = os.time()
         for k,v in pairs(lxc) do
             if (t - v.time) >= TIME_DIFF then
-                remove_container(k)
+                tfun.remove_container(k)
+                tfun.ipt[v.ip] = tfun.ipt[v.ip] - 1
+                lxc[k] = nil
             end
         end
         log.debug('Stopped remove unused conainer')
@@ -71,13 +79,19 @@ local function clear_lxc()
     end
 end
 
+tfun['clear_lxc'] = clear_lxc
+
 -- Function sends error messanges
 
 local function send_error(self, data, user_id)
     if not data then
         local data = SERVER_ERROR
     end
-    if user_id then remove_container(user_id) end
+    if user_id then
+         tfun.remove_container(user_id)
+         tfun.ipt[lxc[user_id].ip] = tfun.ipt[lxc[user_id].ip] - 1
+         lxc[user_id] = nil
+    end
     return self:render({ text = data })
 end
 
@@ -93,7 +107,7 @@ function handler (self)
     local t ={}
     local data = nil
 
-    if not ipt[user_ip] then ipt[user_ip] = 0 end
+    if not tfun.ipt[user_ip] then tfun.ipt[user_ip] = 0 end
 
     local user_id = self:cookie('id')  -- Get cookie with id information
 
@@ -105,19 +119,20 @@ function handler (self)
 
     if not lxc[user_id] then
         -- Check limit (5 users) for one ip adress
-        if ipt[user_ip] >= IP_LIMIT then
-            send_error(self, LIMIT_ERROR)
+        if tfun.ipt[user_ip] >= IP_LIMIT then
+            return send_error(self, LIMIT_ERROR)
         end
-        ipt[user_ip] = ipt[user_ip] + 1
-        log.info('Have %s session on this ip = %s', ipt[user_ip], user_ip)
+        tfun.ipt[user_ip] = tfun.ipt[user_ip] + 1
+        log.info('Have %s session on this ip = %s', tfun.ipt[user_ip], user_ip)
         -- Start new container for user
-        start_container(user_id)
+        host, lxc_id = tfun.start_container(user_id)
+        lxc[user_id] = { host = host, lxc_id = lxc_id }
         log.info('%s: User got new container with host = %s', user_id, lxc[user_id].host)
         lxc[user_id]['ip'] = user_ip
 
         for i = 0, 10 do -- Start new socket connection
-                lxc[user_id].socket = socket.tcp_connect(lxc[user_id].host, CONTAINER_PORT)
-                log.info('%s: Started socket on host %s port %s', user_id, lxc[user_id].host, CONTAINER_PORT)
+                lxc[user_id].socket = socket.tcp_connect(lxc[user_id].host, tfun.CONTAINER_PORT)
+                log.info('%s: Started socket on host %s port %s', user_id, lxc[user_id].host, tfun.CONTAINER_PORT)
                 if lxc[user_id].socket then break end
                 fiber.sleep(SOCKET_TIMEOUT)
         end
@@ -125,7 +140,6 @@ function handler (self)
         -- Check that cookies match ip adress
         if not user_ip == lxc[user_id].ip then
             send_error(self, COOKIE_ERROR)
-            return
         end
         for i = 0, 10 do
             if lxc[user_id].socket then break end
@@ -156,7 +170,7 @@ function handler (self)
         return self:render({ text = data })
     else
         log.info('%s: Hasnt socket conection', user_id)
-        send_error(self, SOCKET_ERROR, user_id)
+        return send_error(self, SOCKET_ERROR, user_id)
     end
 end
 
@@ -166,7 +180,7 @@ local function start()
     httpd = server.new(SERVER_HOST, SERVER_PORT, {app_dir = '.'})
     log.info('Started http server at host = %s and port = %s ', SERVER_HOST, SERVER_PORT)
     -- Start fiber for remove unused containers
-    clear = fiber.create(clear_lxc)
+    clear = fiber.create(tfun.clear_lxc)
 
     httpd:route({ path = '', file = '/index.html'})
     httpd:route({ path = '/tarantool' }, handler)
@@ -175,6 +189,5 @@ local function start()
     math.randomseed(tonumber(require('fiber').time64()))
 end
 
-return {
-start = start
-}
+tfun['start'] = start
+return tfun
