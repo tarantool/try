@@ -58,7 +58,7 @@ local function remove_container(user_id)
 end
 
 tfun['CONTAINER_PORT'] = CONTAINER_PORT
-tfun['start_conrainer'] = start_container
+tfun['start_container'] = start_container
 tfun['remove_container'] = remove_container
 
 -- Function remove all container that not used
