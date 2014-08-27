@@ -12,13 +12,14 @@ local fiber = require('fiber')
 local server = require('http.server')
 local socket = require('socket')
 
+local APP_DIR = '.'
 local SERVER_HOST = '0.0.0.0'
 local SERVER_PORT = '22222'
 local CONTAINER_PORT = '3313'
 local IP_LIMIT = 5
 local SOCKET_TIMEOUT = 0.2
-local START_LXC = 'sudo /usr/local/try-tarantool-org/container/tool.sh start '
-local RM_LXC = 'sudo /usr/local/try-tarantool-org/container/tool.sh stop '
+local START_LXC = 'sudo ./container/try_tarantool_container.sh start '
+local RM_LXC = 'sudo ./container/try_tarantool_container.sh stop '
 local TIME_DIFF = 1800
 local CLEANING_PERIOD = 3600
 local SERVER_ERROR = 'Sorry! Server have problem. Please update web page.'
@@ -163,7 +164,7 @@ end
 -- Start tarantool server
 
 local function start()
-    httpd = server.new(SERVER_HOST, SERVER_PORT, {app_dir = '.'})
+    httpd = server.new(SERVER_HOST, SERVER_PORT, {app_dir = APP_DIR})
     log.info('Started http server at host = %s and port = %s ', SERVER_HOST, SERVER_PORT)
     -- Start fiber for remove unused containers
     clear = fiber.create(clear_lxc)

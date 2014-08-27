@@ -10,6 +10,6 @@ box.cfg{
 
 local try = require('try_tarantool')
 
-require('console').listen('127.0.0.1:3313')
+require('console').listen('127.0.0.1:33014')
 try.start()
 
