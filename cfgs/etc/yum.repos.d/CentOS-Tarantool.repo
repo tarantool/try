@@ -1,5 +1,0 @@
-[tarantool]
-name=CentOS-$releasever - Tarantool
-baseurl=http://tarantool.org/dist/master/centos/$releasever/os/$basearch/
-enabled=1
-gpgcheck=0
