@@ -8,6 +8,7 @@
     <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
     <script src="./js/jquery.mousewheel-min.js"></script>
     <script src="./js/jquery.terminal-min.js"></script>
+    <script src="http://yamltojson.com/js/yaml.js"></script>
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -19,29 +20,37 @@
     </script>
     <link href="./css/jquery.terminal.css" rel="stylesheet">
   </head>
-<body class="terminal">
-<h>Tarantool version 1.6</h><br>
-<h>Try command 'help' to get help.</h>
-<script>
-jQuery(document).ready(function($){
-    $.get("/tarantool?command=",{},function(data) { if (data.charAt(0) == 'S') alert(data); });
-    $('body').terminal(
-        function(command, term) {
+  <body class="terminal">
+    Tarantool version <span id='version'>1.6.3</span><br>
+    Try command 'help' to get help.
+    <script>
+      jQuery(document).ready(function($){
+        $.get("/tarantool?command=box.info.version",{},
+          function(data) {
+            if (data.charAt(0) == 'S')
+              alert(data);
+            var YAML = window.YAML;
+            data = YAML.parse(data);
+            $('#version').text(data);
+          });
+        $('body').terminal(
+          function(command, term) {
             if (command) {
-                command = "/tarantool?command=" + encodeURI(command)
-                $.get(command, function(data) {
-                                   console.log(data);
-                                   term.resume().echo(data);
-                               }, 'text');
-                term.pause();
+              command = "/tarantool?command=" + encodeURI(command)
+              $.get(command,
+                function(data) {
+                  console.log(data);
+                  term.resume().echo(data);
+                }, 'text');
+              term.pause();
             }
         }, {
-            greetings: "=======================================",
-            height: 200,
-            prompt: 'tarantool> '
+             greetings: "=======================================",
+             height: 200,
+             prompt: 'tarantool> '
         });
-});
+      });
 
-</script>
-
-</body></html>
+    </script>
+  </body>
+</html>
