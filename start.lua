@@ -8,8 +8,7 @@ box.cfg{
     --pid_file = 'try.pid'
 }
 
-local try = require('try_tarantool')
-
 require('console').listen('127.0.0.1:33014')
-try.start()
 
+local try = require('try')
+try.start()

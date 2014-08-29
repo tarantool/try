@@ -6,8 +6,7 @@ RPMROOT = ${HOME}/rpmbuild
 TARBALL = $(RPMROOT)/SOURCES/$(PACKAGE).tar.gz
 SPEC = $(RPMROOT)/SPECS/$(PACKAGE).spec
 
-FILES = container/ templates/ public/ \
-	start_try_tarantool.lua try_tarantool.lua README.md
+FILES = try/ start.lua README.md
 
 all: rpm
 
@@ -31,5 +30,6 @@ rpm: clean $(TARBALL) $(SPEC)
 
 clean:
 	rm -f $(RPMROOT)/RPMS/*/$(PACKAGE)-$(VERSION)-$(RELEASE).*.rpm
+	rm -f $(TARBALL) $(SPEC)
 
 .PHONY : all clean

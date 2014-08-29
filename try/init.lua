@@ -2,6 +2,7 @@
 -- Try.tarantool is web pages with terminal that user can use
 -- tarantool console and try tarantool uses cases.
 
+
 local io = require('io')
 local os = require('os')
 local json = require('json')
@@ -18,8 +19,8 @@ local SERVER_PORT = '22222'
 local CONTAINER_PORT = '3313'
 local IP_LIMIT = 5
 local SOCKET_TIMEOUT = 0.2
-local START_LXC = 'sudo ./container/try_tarantool_container.sh start '
-local RM_LXC = 'sudo ./container/try_tarantool_container.sh stop '
+local START_LXC = 'sudo '..APP_DIR..'/container/container.sh start '
+local RM_LXC = 'sudo '..APP_DIR..'/container/container.sh stop '
 local TIME_DIFF = 1800
 local CLEANING_PERIOD = 3600
 local SERVER_ERROR = 'Sorry! Server have problem. Please update web page.'
