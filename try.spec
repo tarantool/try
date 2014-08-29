@@ -1,11 +1,13 @@
 Summary: try.tarantool.org service
-Name: try
+Name: tarantool-try-module
 Version: 1.0
 Release: 1
 License: BSD
 URL: http://try.tarantool.org
 Group: Utilities/Console
-Source0: try.tar.gz
+Source0: tarantool-try-module.tar.gz
+
+%global debug_package %{nil}
 
 %description
 Try tarantool is interactive Tarantool console
