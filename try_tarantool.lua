@@ -57,6 +57,7 @@ local function remove_container(user_id)
     tfun.ipt[lxc[user_id].ip] = tfun.ipt[lxc[user_id].ip] - 1
 end
 
+tfun['SERVER_PORT'] = SERVER_PORT
 tfun['CONTAINER_PORT'] = CONTAINER_PORT
 tfun['start_container'] = start_container
 tfun['remove_container'] = remove_container
