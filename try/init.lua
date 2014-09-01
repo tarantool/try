@@ -14,8 +14,6 @@ local server = require('http.server')
 local socket = require('socket')
 
 local APP_DIR = '.'
-local SERVER_HOST = '0.0.0.0'
-local SERVER_PORT = '22222'
 local CONTAINER_PORT = '3313'
 local IP_LIMIT = 5
 local SOCKET_TIMEOUT = 0.2
@@ -164,9 +162,12 @@ end
 
 -- Start tarantool server
 
-local function start()
-    httpd = server.new(SERVER_HOST, SERVER_PORT, {app_dir = APP_DIR})
-    log.info('Started http server at host = %s and port = %s ', SERVER_HOST, SERVER_PORT)
+local function start(host, port)
+    if host == nil or port == nil then
+        error('Usage: start(host, port)')
+    end
+    httpd = server.new(host, port, {app_dir = APP_DIR})
+    log.info('Started http server at host = %s and port = %s ', host, port)
     -- Start fiber for remove unused containers
     clear = fiber.create(clear_lxc)
 

@@ -32,7 +32,8 @@ install -d %{buildroot}%{_sysconfdir}/cron.d
 echo -e '0 4 * * * root %{containersh} cron'> %{buildroot}%{_sysconfdir}/cron.d/%{name}
 
 install -d %{buildroot}%{_sysconfdir}/sudoers.d
-echo -e '%tarantool ALL = %{containersh} start, \\\n\t\t%{containersh} stop *'> %{buildroot}%{_sysconfdir}/sudoers.d/%{name}
+echo -e '%tarantool ALL = NOPASSWD: %{containersh} start, \\\n\t\t%{containersh} stop *'> %{buildroot}%{_sysconfdir}/sudoers.d/%{name}
+chmod 440 %{buildroot}%{_sysconfdir}/sudoers.d/%{name}
 
 install -d %{buildroot}%{luadir}/container
 install -m 644 try/container/CentOS-Tarantool.repo %{buildroot}%{luadir}/container/
@@ -53,13 +54,13 @@ install -m 644 try/public/js/jquery.terminal-min.js  %{buildroot}%{luadir}/publi
 install -d %{buildroot}%{luadir}/public/css
 install -m 644 try/public/css/jquery.terminal.css  %{buildroot}%{luadir}/public/css/
 
-install -d %{buildroot}%{_bindir}
-install -m 755 start.lua  %{buildroot}%{_bindir}/try_tarantool
+install -d %{buildroot}%{_sysconfdir}/tarantool/instances.available/
+install -m 644 start.lua %{buildroot}%{_sysconfdir}/tarantool/instances.available/try.lua
 
 %files
 %defattr(-,root,root,-)
 %doc README.md
 %{_sysconfdir}/cron.d/%{name}
 %{_sysconfdir}/sudoers.d/%{name}
-%{_bindir}/try_tarantool
+%{_sysconfdir}/tarantool/instances.available/try.lua
 %{luadir}/*

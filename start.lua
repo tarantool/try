@@ -11,4 +11,4 @@ box.cfg{
 require('console').listen('127.0.0.1:33014')
 
 local try = require('try')
-try.start()
+try.start('0.0.0.0', 11111)
