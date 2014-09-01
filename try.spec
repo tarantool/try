@@ -29,7 +29,7 @@ sed -i "s#APP_DIR = .*#APP_DIR = '%{luadir}'#" try/init.lua
 install -m 644 try/init.lua %{buildroot}%{luadir}
 
 install -d %{buildroot}%{_sysconfdir}/cron.d
-echo -e '0 4 *** root %{containersh} cron'> %{buildroot}%{_sysconfdir}/cron.d/%{name}
+echo -e '0 4 * * * root %{containersh} cron'> %{buildroot}%{_sysconfdir}/cron.d/%{name}
 
 install -d %{buildroot}%{_sysconfdir}/sudoers.d
 echo -e '%tarantool ALL = %{containersh} start, \\\n\t\t%{containersh} stop *'> %{buildroot}%{_sysconfdir}/sudoers.d/%{name}
