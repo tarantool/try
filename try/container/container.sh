@@ -9,7 +9,7 @@ CORES=1
 
 cron() {
     # Regenerate container image
-    docker build -t ${IMAGE_TAG} . 2>&1 >/dev/null |grep -v Uploading
+    docker build -t ${IMAGE_TAG} --no-cache=true --rm=true . 2>&1 >/dev/null |grep -v Uploading
 
     # Remove all stopped containers
     stopped=$(docker ps -a|grep Exited|awk '{print $1}')
