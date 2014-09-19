@@ -13,7 +13,7 @@ local fiber = require('fiber')
 local server = require('http.server')
 local socket = require('socket')
 
-local APP_DIR = '.'
+local APP_DIR = './try'
 local CONTAINER_PORT = '3313'
 local IP_LIMIT = 5
 local SOCKET_TIMEOUT = 0.2
@@ -118,7 +118,14 @@ function handler (self)
         for i = 0, 10 do -- Start new socket connection
                 lxc[user_id].socket = socket.tcp_connect(lxc[user_id].host, CONTAINER_PORT)
                 log.info('%s: Started socket on host %s port %s', user_id, lxc[user_id].host, CONTAINER_PORT)
-                if lxc[user_id].socket then break end
+                if lxc[user_id].socket then 
+                    -- Add delimiter for multiline commands
+                    lxc[user_id].socket: write("require('console').delimiter('!!')\n") 
+                    local inf = lxc[user_id].socket:read('\n%.%.%.\n', 1)
+                    lxc[user_id].socket: write("require('console').delimiter=function() return('Please use shift+enter on try.tarantool.org') end!!\n") 
+                    inf = lxc[user_id].socket:read('\n%.%.%.\n', 1)
+                    break
+                end
                 fiber.sleep(SOCKET_TIMEOUT)
         end
     else
@@ -140,7 +147,7 @@ function handler (self)
         log.debug('%s: Started and get answer', user_id)
         local command = self.req:param('command')
         log.info('%s: Getting command <%s>', user_id, command)
-        if lxc[user_id].socket: write(command..'\n') then
+        if lxc[user_id].socket: write(command..'!!\n') then
             log.debug('%s: Socket read', user_id)
             data = lxc[user_id].socket:read('\n%.%.%.\n', 1)
             if (not data) or (data == '') then
