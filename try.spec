@@ -3,8 +3,11 @@ Name: tarantool-try-module
 Version: 1.0
 Release: 1
 License: BSD
+BuildArch: noarch
 URL: http://try.tarantool.org
 Group: Utilities/Console
+Requires: docker
+Requires: tarantool >= 1.6.3
 Source0: tarantool-try-module.tar.gz
 
 %global debug_package %{nil}
