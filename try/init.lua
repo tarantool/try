@@ -7,18 +7,20 @@ local io = require('io')
 local os = require('os')
 local json = require('json')
 local math = require('math')
+local yaml = require('yaml')
 local digest = require('digest')
 local log = require('log')
 local fiber = require('fiber')
+local client = require('http.client')
 local server = require('http.server')
 local socket = require('socket')
 
 local APP_DIR = './try'
 local CONTAINER_PORT = '3313'
+local DOCKER ='http://unix/:/var/run/docker.sock:'
 local IP_LIMIT = 5
 local SOCKET_TIMEOUT = 0.2
 local START_LXC = 'sudo '..APP_DIR..'/container/container.sh start '
-local RM_LXC = 'sudo '..APP_DIR..'/container/container.sh stop '
 local TIME_DIFF = 1800
 local CLEANING_PERIOD = 3600
 local SERVER_ERROR = 'Sorry! Server have problem. Please update web page.'
@@ -29,6 +31,27 @@ local EXIT_ERROR = 'Attention! Server stopped your tarantool machine. Please, wa
 
 local ipt = {} -- Table with information about users try.tarantool session on ip
 local lxc = {} -- Table with information about user: id, ip, linux container host and id, last connection time
+
+-- Function send request to docker for killing container
+
+local function rm_lxc(lxc_id)
+    local inf = client.post(DOCKER..'/containers/'..lxc_id..'/kill') 
+    local status = json.decode(inf.status) 
+    log.debug('Have %s status, when kill container with id = %s', status, lxc_id)
+end
+
+--Fuction remove old linux container 
+
+local function remove_old_containers()
+    local inf = client.get(DOCKER..'/containers/json').body
+    inf = yaml.decode(inf)
+    for _,i in ipairs(inf) do
+        if i.Image == 'tarantool:latest' then
+            rm_lxc(i.Id) 
+        end
+    end
+    log.info('Removed old containers')
+end
 
 -- Function start container
 
@@ -47,10 +70,7 @@ end
 
 local function remove_container(user_id)
     local lxc_id = lxc[user_id].lxc_id
-    log.info(RM_LXC..lxc_id)
-    local file = io.popen(RM_LXC..lxc_id)
-    file:close()
-    log.info('%s: Remove container with ID = %s', user_id, lxc_id)
+    rm_lxc(lxc_id)
     ipt[lxc[user_id].ip] = ipt[lxc[user_id].ip] - 1
     lxc[user_id] = nil
 end
@@ -181,6 +201,7 @@ local function start(host, port)
     httpd:route({ path = '', file = '/index.html'})
     httpd:route({ path = '/tarantool' }, handler)
     httpd:start()
+    remove_old_containers()
     -- Random init
     math.randomseed(tonumber(require('fiber').time64()))
 end
