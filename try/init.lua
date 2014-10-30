@@ -38,7 +38,7 @@ local function start_container(user_id)
     file:close()
     inf = json.decode(inf)
     local host = inf[1]['NetworkSettings']['IPAddress']
-    local lxc_id = inf[1]['ID']
+    local lxc_id = inf[1]['Id']
     log.info('%s: Start container with host = %s lxc_id = %s ', user_id, host, lxc_id)
     lxc[user_id] = { host = host, lxc_id = lxc_id }
 end
