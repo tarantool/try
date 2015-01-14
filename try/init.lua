@@ -7,7 +7,6 @@ local io = require('io')
 local os = require('os')
 local json = require('json')
 local math = require('math')
-local yaml = require('yaml')
 local digest = require('digest')
 local log = require('log')
 local fiber = require('fiber')
@@ -34,71 +33,92 @@ local ipt = {}
 -- last connection time
 local lxc = {}
 
+local function docker(method, uri, body)
+    if body then
+        body = json.encode(body)
+    end
+    local headers = { ["Content-Type"] = "application/json" }
+    local r = client.request(method, DOCKER..uri, body, { headers = headers })
+    if r.status < 200 or r.status >= 300 then
+        log.error('failed to process docker request: %s %s %s', uri, r.status,
+            r.body)
+        return
+    end
+    log.debug('docker: %s %s [[%s]] => %s [[%s]]', method, uri, body or '',
+	r.status, r.body)
+    if #r.body == 0 then
+        return true
+    end
+    return json.decode(r.body)
+end
+
 -- Function send request to docker for killing container
 
 local function rm_lxc(lxc_id)
-    local inf = client.post(DOCKER..'/containers/'..lxc_id..'/kill') 
-    local inf = client.request('DELETE', DOCKER..'/containers/'..lxc_id) 
-    local status = json.decode(inf.status) 
-    log.debug('Have %s status, when delete container with id = %s', 
-                 status, lxc_id)
+    local inf1 = docker('POST', '/containers/'..lxc_id..'/kill')
+    if not inf1 then
+        return
+    end
+    local inf2 = docker('DELETE', '/containers/'..lxc_id)
+    if not inf2 then
+        return
+    end
+    log.info('removed container %s', lxc_id)
 end
 
 --Fuction remove old linux container 
 
 local function remove_old_containers()
-    local inf = client.get(DOCKER..'/containers/json?all=1').body
-    inf = yaml.decode(inf)
+    log.info('begin removing old containers')
+    local inf = docker('GET', '/containers/json?all=1')
     if not inf then
-    log.debug("We haven't containers or we have docker problem")
+        return
     end
-    for x,i in pairs(inf) do
-        if string.match(i.Image, '^(.-):') == 'tarantool' then
+    for _, i in ipairs(inf) do
+        if string.find(i.Command, 'container.lua', nil, true) then
             rm_lxc(i.Id)
         end
     end
-    log.info('Removed old containers')
+    log.info('finish removing old containers')
 end
 
 -- Function start container
 
 local function start_container(user_id)
-    local headers = {["Content-Type"]="application/json"} 
-    local body = [[
-        {
-            "Memory":"512m",
-            "MemorySwap":0,
-            "CpuShares": 1,
-            "Cpuset": "0,1",
-            "Image":"tarantool",
-            "WorkingDir":""
-        }
-    ]]
-    --  Create container
-    local inf = client.post(
-                    'http://unix/:/var/run/docker.sock:/containers/create', 
-                    body, {headers = headers}).body
-    inf = yaml.decode(inf)
-    local lxc_id = inf.Id
-    if lxc_id == nil then 
-        log.debug("Haven't information about container (id)")
-    end  
-    
-    -- Start container    
-    inf = client.post('http://unix/:/var/run/docker.sock:/containers/'..lxc_id..'/start')
-    local status = yaml.decode(inf.status)
-    log.debug('Have %s status, when start container with id = %s', status, lxc_id)
-    
-    -- Get container information
-    inf = client.get('http://unix/:/var/run/docker.sock:/containers/'..lxc_id..'/json').body
-    inf = yaml.decode(inf)
-    local host = inf['NetworkSettings']['IPAddress']
-    if host == nil then
-        log.debug("Haven't information about container (host)")
-    end
+    local body = {
+            Memory = "512m";
+            MemorySwap = 0;
+            CpuShares =  1;
+            Image = "tarantool";
+    }
 
-    log.info('%s: Start container with host = %s lxc_id = %s ', user_id, host, lxc_id)
+    --  Create container
+    local inf = docker('POST', '/containers/create', body)
+    if not inf or not inf.Id then
+        log.error('failed to create container')
+        return false
+    end
+    local lxc_id = inf.Id
+ 
+    -- Start container    
+    local inf = docker('POST', '/containers/'..lxc_id..'/start',
+	{ Detach = true })
+    if not inf then
+        log.error('failed to start container')
+        return false
+    end
+ 
+    -- Get container information
+    local inf = docker('GET', '/containers/'..lxc_id..'/json')
+    if not inf or not inf.NetworkSettings or
+       not inf.NetworkSettings.IPAddress then
+        log.error('failed to get information about container')
+        return false
+    end
+    local host = inf.NetworkSettings.IPAddress
+    log.info('%s: started container %s with ip = %s', user_id, lxc_id, host)
     lxc[user_id] = { host = host, lxc_id = lxc_id }
+    return true
 end
 
 -- Function remove container
@@ -141,7 +161,7 @@ end
 function handler (self)
     local user_ip = nil
 
-    user_ip = self.req.peer.host
+    user_ip = self.peer.host
 
     local host = nil
     local lxc_id = nil
@@ -151,23 +171,20 @@ function handler (self)
     if not ipt[user_ip] then ipt[user_ip] = 0 end
 
     local user_id = self:cookie('id')  -- Get cookie with id information
-
     if user_id == nil then -- Set cookie with id for new users
-        log.info ('Set cookie for ip = %s', user_ip)
         user_id = user_ip..'//'..tostring(math.random(0, 65000))
-        self:cookie({ name = 'id', value = user_id, expires = '+1y' })
     end
 
     if not lxc[user_id] then
         -- Check limit (5 users) for one ip adress
         if ipt[user_ip] >= IP_LIMIT then
-            send_error(self, LIMIT_ERROR)
+            return send_error(self, LIMIT_ERROR)
         end
         ipt[user_ip] = ipt[user_ip] + 1
-        log.info('Have %s session on this ip = %s', ipt[user_ip], user_ip)
         -- Start new container for user
-        start_container(user_id)
-        log.info('%s: User got new container with host = %s', user_id, lxc[user_id].host)
+        if not start_container(user_id) then
+            return send_error(self, SERVER_ERROR)
+        end
         lxc[user_id]['ip'] = user_ip
 
         for i = 0, 10 do -- Start new socket connection
@@ -189,8 +206,7 @@ function handler (self)
     else
         -- Check that cookies match ip adress
         if not user_ip == lxc[user_id].ip then
-            send_error(self, COOKIE_ERROR)
-            return
+            return send_error(self, COOKIE_ERROR)
         end
         for i = 0, 10 do
             if lxc[user_id].socket then break end
@@ -204,25 +220,25 @@ function handler (self)
     if lxc[user_id].socket then
         -- Send message to tarantool in container and get answer
         log.debug('%s: Started and get answer', user_id)
-        local command = self.req:param('command')
+        local command = self:query_param('command')
         log.info('%s: Getting command <%s>', user_id, command)
         if lxc[user_id].socket: write(command..'!!\n') then
             log.debug('%s: Socket read', user_id)
             data = lxc[user_id].socket:read('\n%.%.%.\n', 1)
             if (not data) or (data == '') then
-                send_error(self, EXIT_ERROR, user_id)
-                return
+                return send_error(self, EXIT_ERROR, user_id)
             end
         else
-            send_error(self, SERVER_ERROR, user_id)
+            return send_error(self, SERVER_ERROR, user_id)
         end
         -- Write time last socket connection
         lxc[user_id]['time'] = os.time()
         log.info('%s: Had answer:\n %s', user_id, data)
-        return self:render({ text = data })
+        return self:render({ text = data }):
+            setcookie({ name = 'id', value = user_id, expires = '+1y' })
     else
         log.info('%s: Hasnt socket conection', user_id)
-        send_error(self, SOCKET_ERROR, user_id)
+        return send_error(self, SOCKET_ERROR, user_id)
     end
 end
 
