@@ -7,38 +7,96 @@ local io = require('io')
 local os = require('os')
 local json = require('json')
 local math = require('math')
+local yaml = require('yaml')
 local digest = require('digest')
 local log = require('log')
 local fiber = require('fiber')
+local client = require('http.client')
 local server = require('http.server')
 local socket = require('socket')
 
 local APP_DIR = './try'
 local CONTAINER_PORT = '3313'
+local DOCKER ='http://unix/:/var/run/docker.sock:'
 local IP_LIMIT = 5
 local SOCKET_TIMEOUT = 0.2
-local START_LXC = 'sudo '..APP_DIR..'/container/container.sh start '
-local RM_LXC = 'sudo '..APP_DIR..'/container/container.sh stop '
 local TIME_DIFF = 1800
 local CLEANING_PERIOD = 3600
-local SERVER_ERROR = 'Sorry! Server have problem. Please update web page.'
+local SERVER_ERROR = 'Sorry! Server have problem.Please update web page.'
 local SOCKET_ERROR = 'Sorry! Server have problem with socket. Please update web page.'
 local COOKIE_ERROR = 'Sorry! Cookies do not match ip adress. Please, clear cookies and update web page.'
 local LIMIT_ERROR = 'Sorry! Users limit exceeded! Please, close some session.'
 local EXIT_ERROR = 'Attention! Server stopped your tarantool machine. Please, wait for restart or update web page.'
 
-local ipt = {} -- Table with information about users try.tarantool session on ip
-local lxc = {} -- Table with information about user: id, ip, linux container host and id, last connection time
+-- Table with information about users try.tarantool session on ip
+local ipt = {} 
+-- Table with information about user: id, ip, linux container host and id,
+-- last connection time
+local lxc = {}
+
+-- Function send request to docker for killing container
+
+local function rm_lxc(lxc_id)
+    local inf = client.post(DOCKER..'/containers/'..lxc_id..'/kill') 
+    local inf = client.request('DELETE', DOCKER..'/containers/'..lxc_id) 
+    local status = json.decode(inf.status) 
+    log.debug('Have %s status, when delete container with id = %s', 
+                 status, lxc_id)
+end
+
+--Fuction remove old linux container 
+
+local function remove_old_containers()
+    local inf = client.get(DOCKER..'/containers/json?all=1').body
+    inf = yaml.decode(inf)
+    if not inf then
+    log.debug("We haven't containers or we have docker problem")
+    end
+    for x,i in pairs(inf) do
+        if string.match(i.Image, '^(.-):') == 'tarantool' then
+            rm_lxc(i.Id)
+        end
+    end
+    log.info('Removed old containers')
+end
 
 -- Function start container
 
 local function start_container(user_id)
-    local file = io.popen(START_LXC)
-    local inf = file:read("*a")
-    file:close()
-    inf = json.decode(inf)
-    local host = inf[1]['NetworkSettings']['IPAddress']
-    local lxc_id = inf[1]['Id']
+    local headers = {["Content-Type"]="application/json"} 
+    local body = [[
+        {
+            "Memory":"512m",
+            "MemorySwap":0,
+            "CpuShares": 1,
+            "Cpuset": "0,1",
+            "Image":"tarantool",
+            "WorkingDir":""
+        }
+    ]]
+    --  Create container
+    local inf = client.post(
+                    'http://unix/:/var/run/docker.sock:/containers/create', 
+                    body, {headers = headers}).body
+    inf = yaml.decode(inf)
+    local lxc_id = inf.Id
+    if lxc_id == nil then 
+        log.debug("Haven't information about container (id)")
+    end  
+    
+    -- Start container    
+    inf = client.post('http://unix/:/var/run/docker.sock:/containers/'..lxc_id..'/start')
+    local status = yaml.decode(inf.status)
+    log.debug('Have %s status, when start container with id = %s', status, lxc_id)
+    
+    -- Get container information
+    inf = client.get('http://unix/:/var/run/docker.sock:/containers/'..lxc_id..'/json').body
+    inf = yaml.decode(inf)
+    local host = inf['NetworkSettings']['IPAddress']
+    if host == nil then
+        log.debug("Haven't information about container (host)")
+    end
+
     log.info('%s: Start container with host = %s lxc_id = %s ', user_id, host, lxc_id)
     lxc[user_id] = { host = host, lxc_id = lxc_id }
 end
@@ -47,10 +105,7 @@ end
 
 local function remove_container(user_id)
     local lxc_id = lxc[user_id].lxc_id
-    log.info(RM_LXC..lxc_id)
-    local file = io.popen(RM_LXC..lxc_id)
-    file:close()
-    log.info('%s: Remove container with ID = %s', user_id, lxc_id)
+    rm_lxc(lxc_id)
     ipt[lxc[user_id].ip] = ipt[lxc[user_id].ip] - 1
     lxc[user_id] = nil
 end
@@ -116,13 +171,16 @@ function handler (self)
         lxc[user_id]['ip'] = user_ip
 
         for i = 0, 10 do -- Start new socket connection
-                lxc[user_id].socket = socket.tcp_connect(lxc[user_id].host, CONTAINER_PORT)
-                log.info('%s: Started socket on host %s port %s', user_id, lxc[user_id].host, CONTAINER_PORT)
+                lxc[user_id].socket = socket.tcp_connect(lxc[user_id].host,
+                                                         CONTAINER_PORT)
+                log.info('%s: Started socket on host %s port %s', user_id, 
+                         lxc[user_id].host, CONTAINER_PORT)
                 if lxc[user_id].socket then 
                     -- Add delimiter for multiline commands
                     lxc[user_id].socket: write("require('console').delimiter('!!')\n") 
                     local inf = lxc[user_id].socket:read('\n%.%.%.\n', 1)
-                    lxc[user_id].socket: write("require('console').delimiter=function() return('Please use shift+enter on try.tarantool.org') end!!\n") 
+                    lxc[user_id].socket: write(
+                       "require('console').delimiter=function()return('Please use shift+enter on try.tarantool.org') end!!\n") 
                     inf = lxc[user_id].socket:read('\n%.%.%.\n', 1)
                     break
                 end
@@ -139,7 +197,8 @@ function handler (self)
             fiber.sleep(SOCKET_TIMEOUT)
         end
         -- User get container from container table(lxc[])$
-        log.debug('%s: User got container with host = %s', user_id, lxc[user_id].host)
+        log.debug('%s: User got container with host = %s', user_id, 
+                  lxc[user_id].host)
     end
     -- Check that socket connection have
     if lxc[user_id].socket then
@@ -177,7 +236,9 @@ local function start(host, port)
     log.info('Started http server at host = %s and port = %s ', host, port)
     -- Start fiber for remove unused containers
     clear = fiber.create(clear_lxc)
-
+    httpd:start()
+    remove_old_containers()
+    httpd:stop()
     httpd:route({ path = '', file = '/index.html'})
     httpd:route({ path = '/tarantool' }, handler)
     httpd:start()
