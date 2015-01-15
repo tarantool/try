@@ -18,7 +18,7 @@ local APP_DIR = './try'
 local CONTAINER_PORT = '3313'
 local DOCKER ='http://unix/:/var/run/docker.sock:'
 local IP_LIMIT = 5
-local SOCKET_TIMEOUT = 0.2
+local SOCKET_TIMEOUT = 0.5
 local TIME_DIFF = 1800
 local CLEANING_PERIOD = 3600
 local SERVER_ERROR = 'Sorry! Server have problem.Please update web page.'
@@ -187,10 +187,10 @@ function handler (self)
         end
         lxc[user_id]['ip'] = user_ip
 
-        for i = 0, 10 do -- Start new socket connection
+        for i = 0, 20 do -- Start new socket connection
                 lxc[user_id].socket = socket.tcp_connect(lxc[user_id].host,
                                                          CONTAINER_PORT)
-                log.info('%s: Started socket on host %s port %s', user_id, 
+                log.debug('%s: connecting to %s:%s', user_id, 
                          lxc[user_id].host, CONTAINER_PORT)
                 if lxc[user_id].socket then 
                     -- Add delimiter for multiline commands
@@ -219,11 +219,9 @@ function handler (self)
     -- Check that socket connection have
     if lxc[user_id].socket then
         -- Send message to tarantool in container and get answer
-        log.debug('%s: Started and get answer', user_id)
         local command = self:query_param('command')
-        log.info('%s: Getting command <%s>', user_id, command)
+        log.info('%s: command <%s>', user_id, command)
         if lxc[user_id].socket: write(command..'!!\n') then
-            log.debug('%s: Socket read', user_id)
             data = lxc[user_id].socket:read('\n%.%.%.\n', 1)
             if (not data) or (data == '') then
                 return send_error(self, EXIT_ERROR, user_id)
@@ -233,11 +231,11 @@ function handler (self)
         end
         -- Write time last socket connection
         lxc[user_id]['time'] = os.time()
-        log.info('%s: Had answer:\n %s', user_id, data)
+        log.info('%s: answer:\n %s', user_id, data)
         return self:render({ text = data }):
             setcookie({ name = 'id', value = user_id, expires = '+1y' })
     else
-        log.info('%s: Hasnt socket conection', user_id)
+        log.info('%s: failed to connect', user_id)
         return send_error(self, SOCKET_ERROR, user_id)
     end
 end
