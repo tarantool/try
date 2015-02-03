@@ -1,56 +1,163 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta charset="utf-8">
-    <title>Tarantool try-terminal</title>
-    <meta name="Description" content="Tarantool try-terminal">
-    <link rel="sitemap" type="application/xml" title="Sitemap" href="">
-    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-    <script src="./js/jquery.mousewheel-min.js"></script>
-    <script src="./js/jquery.terminal-min.js"></script>
-    <script src="http://yamltojson.com/js/yaml.js"></script>
-    <script>
-        (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-         })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+﻿
+<!doctype html>
 
-         ga('create', 'UA-22120502-1', 'auto');
-         ga('send', 'pageview');
-    </script>
-    <link href="./css/jquery.terminal.css" rel="stylesheet">
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <title>Tarantool - Try</title>
+    <link rel="shortcut icon" href="/theme/favicon.ico" />
+    <link rel="stylesheet"    href="/theme/design.css" />
+    <link rel="stylesheet"    href="/theme/pygmentize.css" />
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <!--script src="/js/select.js"></script-->
+    <!--[if lt IE 9]>
+      <script src="scripts/ie8.js"></script>
+      <link rel="stylesheet" href="/theme/new/ie8.css" />
+    <![endif]-->
+    
+<meta name="Description" content="Tarantool try-terminal">
+<link  href="theme/jquery.terminal.css"  rel="stylesheet">
+<script src="js/jquery.mousewheel-min.js"       ></script>
+<script src="js/jquery.terminal-min.js"         ></script>
+<script src="http://yamltojson.com/js/yaml.js"  ></script>
+
+    
   </head>
-  <body class="terminal">
-    Tarantool version <span id='version'>1.6.3</span><br>
-    Try command 'help' to get help.
-    <script>
-      jQuery(document).ready(function($){
-        $.get("/tarantool?command=box.info.version",{},
-          function(data) {
-            if (data.charAt(0) == 'S')
-              alert(data);
-            var YAML = window.YAML;
-            data = YAML.parse(data);
-            $('#version').text(data);
-          });
-        $('body').terminal(
-          function(command, term) {
-            if (command) {
-              command = "/tarantool?command=" + encodeURI(command)
-              $.get(command,
-                function(data) {
-                  console.log(data);
-                  term.resume().echo(data);
-                }, 'text');
-              term.pause();
-            }
-        }, {
-             greetings: "=======================================",
-             height: 200,
-             prompt: 'tarantool> '
-        });
-      });
 
-    </script>
+  <body class="p-main">
+    <div class="b-wrapper">
+      <!-- HEADER > -->
+      <header class="b-header">
+        <div class="b-header-wrapper">
+          <nav class="b-header_menu">
+            
+  <ul class="b-menu">
+    
+      <li class="b-menu-item">
+        
+        <a href="http://tarantool.org" class="b-menu-item-url">Overview</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://try.tarantool.org" class="b-menu-item-url p-active">Try</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://tarantool.org/documentation.html" class="b-menu-item-url">Documentation</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://tarantool.org/download.html" class="b-menu-item-url">Downloads</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://rocks.tarantool.org" class="b-menu-item-url">Rocks</a>
+        
+      </li>
+    
+  </ul>
+
+          </nav>
+        </div>
+      </header>
+      <!-- < HEADER -->
+
+      <div class="b-content b-clearbox">
+        
+<section class="b-lightgray_block b-try_terminal terminal">
+      Tarantool version <span id='version'>1.6.3</span><br>
+      Try command 'help' to get help.
+      <script>
+        jQuery(document).ready(function($){
+          $.get("/tarantool?command=box.info.version",{},
+            function(data) {
+              if (data.charAt(0) == 'S')
+                alert(data);
+              $('#version').text(window.YAML.parse(data));
+            });
+          $('.terminal').terminal(
+            function(command, term) {
+              if (command) {
+                command = "/tarantool?command=" + encodeURI(command)
+                $.get(command, function(data) {
+                    console.log(data);
+                    term.resume().echo(data);
+                  }, 'text');
+                term.pause();
+              }
+          }, {
+              greetings: "=======================================",
+              height: $(document).height() - 150,
+              prompt: 'tarantool> '
+          });
+          $(window).resize(function() {
+              $('.terminal').height($(document).height() - 150);
+          });
+        });
+
+      </script>
+
+    </section>
+
+      </div>
+    </div>
+
+    <!-- FOOTER > -->
+    <footer class="b-footer">
+      <div class="b-footer-wrapper">
+        <nav class="b-footer_menu">
+          <div class="b-footer-copyright">© 2015 - Tarantool. All right reserved.</div>
+          
+  <ul class="b-menu">
+    
+      <li class="b-menu-item">
+        
+        <a href="http://tarantool.org" class="b-menu-item-url">Overview</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://try.tarantool.org" class="b-menu-item-url p-active">Try</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://tarantool.org/documentation.html" class="b-menu-item-url">Documentation</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://tarantool.org/download.html" class="b-menu-item-url">Downloads</a>
+        
+      </li>
+    
+      <li class="b-menu-item">
+        
+        <a href="http://rocks.tarantool.org" class="b-menu-item-url">Rocks</a>
+        
+      </li>
+    
+  </ul>
+
+          <div class="b-footer-other">
+            <a href="http://stable.tarantool.org">1.5 web site and downloads</a>
+          </div>
+        </nav>
+      </div>
+    </footer>
+  <!-- < FOOTER -->
   </body>
 </html>
+

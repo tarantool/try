@@ -1,0 +1,2 @@
+all:
+	./convert.py

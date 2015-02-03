@@ -32,4 +32,7 @@ clean:
 	rm -f $(RPMROOT)/RPMS/*/$(PACKAGE)-$(VERSION)-$(RELEASE).*.rpm
 	rm -f $(TARBALL) $(SPEC)
 
+template:
+	make -C templates
+
 .PHONY : all clean

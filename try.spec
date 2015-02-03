@@ -46,12 +46,11 @@ install -m 644 try/templates/index.html  %{buildroot}%{luadir}/templates/index.h
 install -d %{buildroot}%{luadir}/public
 
 install -d %{buildroot}%{luadir}/public/js
-install -m 644 try/public/js/jquery-1.7.1.min.js  %{buildroot}%{luadir}/public/js/
 install -m 644 try/public/js/jquery.mousewheel-min.js %{buildroot}%{luadir}/public/js/
 install -m 644 try/public/js/jquery.terminal-min.js  %{buildroot}%{luadir}/public/js/
 
-install -d %{buildroot}%{luadir}/public/css
-install -m 644 try/public/css/jquery.terminal.css  %{buildroot}%{luadir}/public/css/
+install -d %{buildroot}%{luadir}/public/theme/
+install -m 644 try/public/theme/jquery.terminal.css  %{buildroot}%{luadir}/public/theme/
 
 install -d %{buildroot}%{_sysconfdir}/tarantool/instances.available/
 install -m 644 start.lua %{buildroot}%{_sysconfdir}/tarantool/instances.available/try.lua
