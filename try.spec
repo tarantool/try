@@ -51,6 +51,8 @@ install -m 644 try/public/js/jquery.terminal-min.js  %{buildroot}%{luadir}/publi
 
 install -d %{buildroot}%{luadir}/public/theme/
 install -m 644 try/public/theme/jquery.terminal.css  %{buildroot}%{luadir}/public/theme/
+install -m 644 try/public/theme/design.css  %{buildroot}%{luadir}/public/theme/
+install -m 644 try/public/theme/pygmentize.css  %{buildroot}%{luadir}/public/theme/
 
 install -d %{buildroot}%{_sysconfdir}/tarantool/instances.available/
 install -m 644 start.lua %{buildroot}%{_sysconfdir}/tarantool/instances.available/try.lua
