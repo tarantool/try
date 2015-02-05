@@ -53,6 +53,15 @@ install -d %{buildroot}%{luadir}/public/theme/
 install -m 644 try/public/theme/jquery.terminal.css  %{buildroot}%{luadir}/public/theme/
 install -m 644 try/public/theme/design.css  %{buildroot}%{luadir}/public/theme/
 install -m 644 try/public/theme/pygmentize.css  %{buildroot}%{luadir}/public/theme/
+install -d %{buildroot}%{luadir}/public/theme/fonts
+install -m 644 try/public/theme/fonts/HelveticaNeue.eot  %{buildroot}%{luadir}/public/theme/fonts/
+install -m 644 try/public/theme/fonts/HelveticaNeue.svg  %{buildroot}%{luadir}/public/theme/fonts/
+install -m 644 try/public/theme/fonts/HelveticaNeue.ttf  %{buildroot}%{luadir}/public/theme/fonts/
+install -m 644 try/public/theme/fonts/HelveticaNeue.woff  %{buildroot}%{luadir}/public/theme/fonts/
+install -m 644 try/public/theme/fonts/HelveticaNeue-Bold.eot  %{buildroot}%{luadir}/public/theme/fonts/
+install -m 644 try/public/theme/fonts/HelveticaNeue-Bold.svg  %{buildroot}%{luadir}/public/theme/fonts/
+install -m 644 try/public/theme/fonts/HelveticaNeue-Bold.ttf  %{buildroot}%{luadir}/public/theme/fonts/
+install -m 644 try/public/theme/fonts/HelveticaNeue-Bold.woff  %{buildroot}%{luadir}/public/theme/fonts/
 
 install -d %{buildroot}%{_sysconfdir}/tarantool/instances.available/
 install -m 644 start.lua %{buildroot}%{_sysconfdir}/tarantool/instances.available/try.lua
