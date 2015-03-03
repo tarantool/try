@@ -23,7 +23,7 @@
           $('.terminal').terminal(
             function(command, term) {
               if (command) {
-                command = "/tarantool?command=" + encodeURI(command)
+                command = "/tarantool?command=" + encodeURIComponent(command)
                 $.get(command, function(data) {
                     console.log(data);
                     term.resume().echo(data);
