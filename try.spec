@@ -42,6 +42,7 @@ install -m 755 try/container/container.sh %{buildroot}%{luadir}/container/
 
 install -d %{buildroot}%{luadir}/templates
 install -m 644 try/templates/index.html  %{buildroot}%{luadir}/templates/index.html
+install -m 644 try/templates/blank.html  %{buildroot}%{luadir}/templates/blank.html
 
 install -d %{buildroot}%{luadir}/public
 
