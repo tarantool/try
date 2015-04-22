@@ -26,6 +26,7 @@ local SERVER_ERROR = 'Sorry! Server have problem.Please update web page.'
 local SOCKET_ERROR = 'Sorry! Server have problem with socket. Please update web page.'
 local COOKIE_ERROR = 'Sorry! Cookies do not match ip adress. Please, clear cookies and update web page.'
 local LIMIT_ERROR = 'Sorry! Users limit exceeded! Please, close some session.'
+local COMMAND_ERROR = 'Sorry! Command is null. You must send some command in the request.' 
 local EXIT_ERROR = 'Attention! Server stopped your tarantool machine. Please, wait for restart or update web page.'
 local CONTAINER_PRELUDE=
      "require('console').delimiter('!!')"..
@@ -220,6 +221,10 @@ local function handler (self)
     end
     -- Send message to tarantool in container and get answer
     local command = self:query_param('command')
+    if not command then
+        log.error("command to server is nil")
+        return send_error(self, COMMAND_ERROR , user_id)
+    end
     log.info('command: <%s>', command)
     if not lxc[user_id].socket:write(command..'!!\n') then
         log.error("failed to write command")
