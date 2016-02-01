@@ -12,10 +12,10 @@ all: rpm
 
 $(SPEC):
 	mkdir -p $(RPMROOT)/SPECS
-	cp try.spec $@
+	cp rpm/try.spec $@
 	sed -i -e 's/^Version: [0-9.]*$$/Version: $(VERSION)/' -e 's/^Release: [0-9]*$$/Release: $(RELEASE)/' $@
 
-$(TARBALL): $(FILES) try.spec
+$(TARBALL): $(FILES) rpm/try.spec
 	mkdir -p $(RPMROOT)/SOURCES
 	$(eval TEMPDIR := $(shell mktemp -d))
 	mkdir $(TEMPDIR)/$(PACKAGE)
