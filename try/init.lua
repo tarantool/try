@@ -103,9 +103,9 @@ local function start_container(user_id, user_ip)
     ipt[user_ip] = ipt[user_ip] + 1
 
     local body = {
-            Memory = "512m";
-            MemorySwap = 0;
-            CpuShares =  1;
+            Memory = 536870912;
+	    MemorySwap = 0;
+            CpuShares =  2;
             Image = "tarantool";
     }
 
@@ -147,9 +147,9 @@ local function start_container(user_id, user_ip)
         local s = socket.tcp_connect(host, CONTAINER_PORT)
         if s then 
             -- Add delimiter for multiline commands
-            if s:write(CONTAINER_PRELUDE) and s:read('\n%.%.%.\n', 1) then
-                lxc[user_id].socket = s
-                return true
+            if s:write(CONTAINER_PRELUDE) and s:read('\n...\n', 1) then
+               lxc[user_id].socket = s
+               return true
             end
             s:close()
         end
@@ -230,7 +230,7 @@ local function handler (self)
         log.error("failed to write command")
         return send_error(self, SERVER_ERROR, user_id)
     end
-    local data = lxc[user_id].socket:read('\n%.%.%.\n', 1)
+    local data = lxc[user_id].socket:read('\n...\n', 1)
     if (not data) or (data == '') then
         log.error("failed to read response")
         return send_error(self, EXIT_ERROR, user_id)

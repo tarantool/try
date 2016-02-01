@@ -1,5 +1,5 @@
 Summary: try.tarantool.org service
-Name: tarantool-try-module
+Name: tarantool-try
 Version: 1.0
 Release: 1
 License: BSD
@@ -7,8 +7,8 @@ BuildArch: noarch
 URL: http://try.tarantool.org
 Group: Utilities/Console
 Requires: docker
-Requires: tarantool >= 1.6.3
-Source0: tarantool-try-module.tar.gz
+Requires: tarantool >= 1.6.8.0
+Source0: tarantool-try.tar.gz
 
 %global debug_package %{nil}
 

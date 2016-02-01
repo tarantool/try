@@ -1,5 +1,5 @@
-PACKAGE = tarantool-try-module
-DESCRIBE = $(subst -, ,$(shell (git describe || echo 1.0-1))) 0
+PACKAGE = tarantool-try
+DESCRIBE = $(subst -, ,$(shell (git describe --long --always))) 0
 VERSION = $(word 1,$(DESCRIBE))
 RELEASE = $(word 2,$(DESCRIBE))
 RPMROOT = ${HOME}/rpmbuild
