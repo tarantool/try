@@ -18,6 +18,7 @@ local APP_DIR = '/usr/share/tarantool/try'
 local CONTAINER_PORT = '3313'
 
 local DOCKER ='http://unix/:/var/run/docker.sock:'
+local DOCKER_IMAGE='tarantool/try:latest'
 local IP_LIMIT = 5
 local SOCKET_TIMEOUT = 0.5
 local TIME_DIFF = 1800
@@ -106,7 +107,7 @@ local function start_container(user_id, user_ip)
             Memory = 536870912;
 	    MemorySwap = 0;
             CpuShares =  2;
-            Image = "tarantool";
+            Image = DOCKER_IMAGE;
     }
 
     --  Create container
