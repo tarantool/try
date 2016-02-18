@@ -1,29 +1,35 @@
-Summary: try.tarantool.org service
 Name: tarantool-try
-Version: 1.0
-Release: 1
+Version: 1.0.0
+Release: 1%{?dist}
+Summary: try.tarantool.org service
+Group: Applications/Databases
 License: BSD
+URL: https://github.com/tarantool/try
+Source0: https://github.com/tarantool/try/archive/%{version}/try-%{version}.tar.gz
 BuildArch: noarch
-URL: http://try.tarantool.org
-Group: Utilities/Console
-Requires: docker
+BuildRequires: tarantool >= 1.6.8.0
+BuildRequires: python >= 2.6.0
+BuildRequires: python-jinja2 >= 2.7.0
+BuildRequires: make
 Requires: tarantool >= 1.6.8.0
-Source0: tarantool-try.tar.gz
+Requires: docker >= 1.8.2
+Requires: coreutils
+Requires: anacron
 
-%global debug_package %{nil}
+%description
+A Tarantool web demo.
 
 %define luadir %{_datadir}/tarantool/try
 %define containersh %{luadir}/container/container.sh
 
 %description
-Try tarantool is interactive Tarantool console
+An interactive web-console for Tarantool.
 
-######################################################
 %prep
-
-%setup -q -n %{name}
+%setup -q -n %{name}-%{version}
 
 %build
+make -C templates
 
 %install
 
@@ -67,9 +73,17 @@ install -m 644 try/public/theme/fonts/HelveticaNeue-Bold.woff  %{buildroot}%{lua
 install -d %{buildroot}%{_sysconfdir}/tarantool/instances.available/
 install -m 644 start.lua %{buildroot}%{_sysconfdir}/tarantool/instances.available/try.lua
 
+%post
+%{luadir}/container/container.sh cron
+
 %files
-%defattr(-,root,root,-)
 %doc README.md
+%{!?_licensedir:%global license %doc}
+%license LICENSE
 %{_sysconfdir}/cron.d/%{name}
 %{_sysconfdir}/tarantool/instances.available/try.lua
 %{luadir}/*
+
+%changelog
+* Thu Feb 18 2016 Roman Tsisyk <roman@tarantool.org> 1.0-1
+- Initial version of the RPM spec.

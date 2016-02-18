@@ -3,7 +3,7 @@
 # Change current dir to script dir
 cd $(dirname $(readlink -f "$0"))
 
-IMAGE_TAG=tarantool
+IMAGE_TAG=tarantool/try
 
 cron() {
     # Regenerate container image
