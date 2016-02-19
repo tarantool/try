@@ -12,6 +12,7 @@ BuildRequires: python >= 2.6.0
 BuildRequires: python-jinja2 >= 2.7.0
 BuildRequires: make
 Requires: tarantool >= 1.6.8.0
+Requires: tarantool-http >= 1.0.0
 Requires: docker >= 1.8.2
 Requires: coreutils
 Requires: anacron
@@ -74,7 +75,8 @@ install -d %{buildroot}%{_sysconfdir}/tarantool/instances.available/
 install -m 644 start.lua %{buildroot}%{_sysconfdir}/tarantool/instances.available/try.lua
 
 %post
-%{luadir}/container/container.sh cron
+echo "Generating Docker images"
+%{luadir}/container/container.sh cron || :
 
 %files
 %doc README.md
