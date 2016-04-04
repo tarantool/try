@@ -19,8 +19,8 @@ local CONTAINER_PORT = '3313'
 
 local DOCKER ='http://unix/:/var/run/docker.sock:'
 local DOCKER_IMAGE='tarantool/try:latest'
-local IP_LIMIT = 5
-local SOCKET_TIMEOUT = 0.5
+local IP_LIMIT = 10
+local SOCKET_TIMEOUT = 3
 local TIME_DIFF = 1800
 local CLEANING_PERIOD = 3600
 local SERVER_ERROR = 'Sorry! The server has a problem. Please update the web page.'
@@ -190,7 +190,8 @@ end
 
 -- Handler for request from try.tarantool page
 local function handler (self)
-    local user_ip = self.peer.host
+    local user_ip = self.headers['x-real-ip'] or
+        self.headers['x-forwarded-for'] or self.peer.host
     local user_id = self:cookie('id')  -- Get cookie with id information
     if user_id == nil then -- Set cookie with id for new users
         user_id = user_ip..'//'..tostring(math.random(0, 65000))
