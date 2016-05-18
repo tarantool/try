@@ -42,7 +42,7 @@ install -d %{buildroot}%{_sysconfdir}/cron.d
 echo -e '0 4 * * * root %{containersh} cron'> %{buildroot}%{_sysconfdir}/cron.d/%{name}
 
 install -d %{buildroot}%{luadir}/container
-install -m 644 try/container/CentOS-Tarantool.repo %{buildroot}%{luadir}/container/
+install -m 644 try/container/tarantool_1_6.repo %{buildroot}%{luadir}/container/
 install -m 644 try/container/Dockerfile %{buildroot}%{luadir}/container/
 install -m 755 try/container/container.lua %{buildroot}%{luadir}/container/
 install -m 755 try/container/container.sh %{buildroot}%{luadir}/container/
