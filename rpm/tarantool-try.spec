@@ -13,7 +13,7 @@ BuildRequires: python-jinja2 >= 2.7.0
 BuildRequires: make
 Requires: tarantool >= 1.6.8.0
 Requires: tarantool-http >= 1.0.0
-Requires: docker >= 1.8.2
+Requires: docker-engine >= 1.12.1
 Requires: coreutils
 Requires: anacron
 

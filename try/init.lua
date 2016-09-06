@@ -27,7 +27,7 @@ local SERVER_ERROR = 'Sorry! The server has a problem. Please update the web pag
 local SOCKET_ERROR = 'Sorry! The server has a problem with socket. Please update the web page.'
 local COOKIE_ERROR = 'Sorry! Your cookie does not match your ip adress. Please clear cookies and update the web page.'
 local LIMIT_ERROR = 'Sorry! The limit on active users has been exceeded! Please try again later.'
-local COMMAND_ERROR = 'Sorry! Command is null. You must send a command in the request.' 
+local COMMAND_ERROR = 'Sorry! Command is null. You must send a command in the request.'
 local EXIT_ERROR = 'Attention! The server has stopped your tarantool machine. Please wait for restart or update the web page.'
 local CONTAINER_PRELUDE=
      "require('console').delimiter('!!')"..
@@ -36,7 +36,7 @@ local CONTAINER_PRELUDE=
      "end\n"
 
 -- Table with information about users try.tarantool session on ip
-local ipt = {} 
+local ipt = {}
 -- Table with information about user: id, ip, linux container host and id,
 -- last connection time
 local lxc = {}
@@ -74,7 +74,7 @@ local function rm_lxc(lxc_id)
     log.info('removed container %s', lxc_id)
 end
 
---Fuction remove old linux container 
+--Fuction remove old linux container
 
 local function remove_old_containers()
     log.info('begin removing old containers')
@@ -104,10 +104,12 @@ local function start_container(user_id, user_ip)
     ipt[user_ip] = ipt[user_ip] + 1
 
     local body = {
+        Image = DOCKER_IMAGE;
+        HostConfig = {
             Memory = 536870912;
-	    MemorySwap = 0;
+            MemorySwap = 0;
             CpuShares =  2;
-            Image = DOCKER_IMAGE;
+        }
     }
 
     --  Create container
@@ -121,9 +123,8 @@ local function start_container(user_id, user_ip)
     local lxc_id = inf.Id
     lxc[user_id].lxc_id = lxc_id
 
-    -- Start container    
-    local inf = docker('POST', '/containers/'..lxc_id..'/start',
-        { Detach = true })
+    -- Start container
+    local inf = docker('POST', '/containers/'..lxc_id..'/start')
     if not inf then
         log.error('failed to start container')
         remove_container(user_id)
@@ -146,7 +147,7 @@ local function start_container(user_id, user_ip)
     for i = 0, 20 do -- Start new socket connection
         log.debug('connecting to %s:%s', lxc[user_id].host, CONTAINER_PORT)
         local s = socket.tcp_connect(host, CONTAINER_PORT)
-        if s then 
+        if s then
             -- Add delimiter for multiline commands
             if s:write(CONTAINER_PRELUDE) and s:read('\n...\n', 1) then
                lxc[user_id].socket = s
