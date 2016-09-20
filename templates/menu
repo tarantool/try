@@ -1,10 +1,10 @@
 {# Modify i_links to add records to site #}
 {% set i_links = [
-  ("Overview", "/"),
+  ("Overview", "https://tarantool.org/"),
   ("Try", "http://try.tarantool.org"),
-  ("Documentation", "/doc/"),
-  ("Download", "/download.html"),
-  ("Careers", "/careers.html"),
+  ("Documentation", "https://tarantool.org/doc/"),
+  ("Download", "https://tarantool.org/download.html"),
+  ("Careers", "https://tarantool.org/careers.html"),
   ("Rocks", "http://rocks.tarantool.org")
 ] %}
 
