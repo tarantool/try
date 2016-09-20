@@ -14,7 +14,7 @@ local client = require('http.client')
 local server = require('http.server')
 local socket = require('socket')
 
-local APP_DIR = '/usr/share/tarantool/try'
+local APP_DIR = '/Users/blikh/src/work/try/try'
 local CONTAINER_PORT = '3313'
 
 local DOCKER ='http://unix/:/var/run/docker.sock:'
