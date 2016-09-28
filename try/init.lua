@@ -14,7 +14,7 @@ local client = require('http.client')
 local server = require('http.server')
 local socket = require('socket')
 
-local APP_DIR = '/Users/blikh/src/work/try/try'
+local APP_DIR = debug.getinfo(1).source:match("@?(.*/)") or '.'
 local CONTAINER_PORT = '3313'
 
 local DOCKER ='http://unix/:/var/run/docker.sock:'
@@ -251,6 +251,11 @@ local function start(host, port)
     if host == nil or port == nil then
         error('Usage: start(host, port)')
     end
+
+    os.execute('docker build -t tarantool/try ' .. APP_DIR .. '/container')
+    -- prevent access from containers to outside world
+    os.execute('/bin/sh -c "echo 0 > /proc/sys/net/ipv4/ip_forward"')
+
     httpd = server.new(host, port, {app_dir = APP_DIR})
     log.info('Started http server at host = %s and port = %s ', host, port)
     -- Start fiber for remove unused containers
