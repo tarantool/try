@@ -13,6 +13,8 @@ local fiber = require('fiber')
 local client = require('http.client')
 local server = require('http.server')
 local socket = require('socket')
+local fio = require('fio')
+local fiber = require('fiber')
 
 local APP_DIR = debug.getinfo(1).source:match("@?(.*/)") or '.'
 local CONTAINER_PORT = '3313'
@@ -250,6 +252,10 @@ end
 local function start(host, port)
     if host == nil or port == nil then
         error('Usage: start(host, port)')
+    end
+
+    while next(fio.glob('/var/run/docker.sock')) == nil do
+        fiber.sleep(0.5)
     end
 
     os.execute('docker build -t tarantool/try ' .. APP_DIR .. '/container')
