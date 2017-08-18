@@ -1,4 +1,4 @@
-FROM tarantool/tarantool:1.7
+FROM tarantool/tarantool:1.8
 
 RUN apk add --no-cache \
     ca-certificates \

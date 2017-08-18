@@ -5,7 +5,7 @@
 ---
 
 box.cfg {
-    slab_alloc_arena = 0.5;
+    memtx_memory = 0.5;
     wal_mode = "none"
 }
 
