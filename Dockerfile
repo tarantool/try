@@ -1,4 +1,4 @@
-FROM tarantool/tarantool:1.8
+FROM tarantool/tarantool:1.7
 
 RUN apk add --no-cache \
     ca-certificates \
@@ -38,6 +38,8 @@ ENV DIND_COMMIT 3b5fac462d21ca164b3778647420016315289034
 
 RUN wget "https://raw.githubusercontent.com/docker/docker/${DIND_COMMIT}/hack/dind" -O /usr/local/bin/dind \
     && chmod +x /usr/local/bin/dind
+
+ENV DOCKER_HOST=tcp://127.0.0.1:12345
 
 ADD https://github.com/jwilder/forego/releases/download/v0.16.1/forego /usr/local/bin/forego
 RUN chmod u+x /usr/local/bin/forego

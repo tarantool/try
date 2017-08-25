@@ -3,96 +3,94 @@
 -- tarantool console and try tarantool uses cases.
 
 
-local io = require('io')
-local os = require('os')
-local json = require('json')
-local math = require('math')
+local fio    = require('fio')
+local log    = require('log')
+local json   = require('json')
+local math   = require('math')
+local fiber  = require('fiber')
+local httpc  = require('http.client')
 local digest = require('digest')
-local log = require('log')
-local fiber = require('fiber')
-local client = require('http.client')
-local server = require('http.server')
 local socket = require('socket')
-local fio = require('fio')
-local fiber = require('fiber')
+
+local server = require('http.server')
 
 local APP_DIR = debug.getinfo(1).source:match("@?(.*/)") or '.'
-local CONTAINER_PORT = '3313'
+local CONTAINER_PORT = '3313'  
 
-local DOCKER ='http://unix/:/var/run/docker.sock:'
+local DOCKER ='http://127.0.0.1:12345'
 local DOCKER_IMAGE='tarantool/try:latest'
 local IP_LIMIT = 10
 local SOCKET_TIMEOUT = 3
 local TIME_DIFF = 1800
 local CLEANING_PERIOD = 3600
-local SERVER_ERROR = 'Sorry! The server has a problem. Please update the web page.'
-local SOCKET_ERROR = 'Sorry! The server has a problem with socket. Please update the web page.'
-local COOKIE_ERROR = 'Sorry! Your cookie does not match your ip adress. Please clear cookies and update the web page.'
-local LIMIT_ERROR = 'Sorry! The limit on active users has been exceeded! Please try again later.'
-local COMMAND_ERROR = 'Sorry! Command is null. You must send a command in the request.'
-local EXIT_ERROR = 'Attention! The server has stopped your tarantool machine. Please wait for restart or update the web page.'
-local CONTAINER_PRELUDE=
-     "require('console').delimiter('!!')"..
-     "require('console').delimiter=function() "..
-     "return('Please use shift+enter on try.tarantool.org')"..
-     "end\n"
+local SERVER_ERROR  = 'Sorry! The server has a problem. Please update the we' ..
+                      'b page.'
+local SOCKET_ERROR  = 'Sorry! The server has a problem with socket. Please u' ..
+                      'pdate the web page.'
+local COOKIE_ERROR  = 'Sorry! Your cookie does not match your ip adress. Ple' ..
+                      'ase clear cookies and update the web page.'
+local LIMIT_ERROR   = 'Sorry! The limit on active users has been exceeded! P' ..
+                      'lease try again later.'
+local COMMAND_ERROR = 'Sorry! Command is null. You must send a command in th' ..
+                      'e request.'
+local EXIT_ERROR    = 'Attention! The server has stopped your tarantool mach' ..
+                      'ine. Please wait for restart or update the web page.'
+local CONTAINER_PRELUDE = "require('console').delimiter('!!')"                      ..
+                          "require('console').delimiter = function() "              ..
+                          "  return('Please use shift+enter on try.tarantool.org')" ..
+                          "end\n"
 
 -- Table with information about users try.tarantool session on ip
 local ipt = {}
--- Table with information about user: id, ip, linux container host and id,
--- last connection time
+
+-- Table with information about user:
+-- id, ip, linux container host and id, last connection time
 local lxc = {}
 
-local function docker(method, uri, body)
+local function docker(method, uri, body, ...)
     if body then
         body = json.encode(body)
     end
+    if select('#', ...) > 0 then
+        uri = uri:format(...)
+    end
+    uri = DOCKER .. uri
     local headers = { ["Content-Type"] = "application/json" }
-    local r = client.request(method, DOCKER..uri, body, { headers = headers })
-    if r.status < 200 or r.status >= 300 then
-        log.error('failed to process docker request: %s %s %s', uri, r.status,
-            r.body)
+    log.verbose('sending %s request to %s', method, uri)
+    local response = httpc.request(method, uri, body, {
+        headers = headers,
+        timeout = 10
+    })
+    log.verbose('response: %s', json.encode(response))
+    if response.status < 200 or response.status >= 300 then
+        log.error('failed to process docker request for %s with status %s: %s',
+                   uri, response.status, response.body)
         return
     end
-    log.debug('docker: %s %s [[%s]] => %s [[%s]]', method, uri, body or '',
-    r.status, r.body)
-    if #r.body == 0 then
+    log.verbose('docker: %s %s [[%s]] => %s [[%s]]', method, uri, body or '',
+                 response.status, response.body)
+    if not response.body or #response.body == 0 then
         return true
     end
-    return json.decode(r.body)
+    return json.decode(response.body)
 end
 
 -- Function send request to docker for killing container
-
 local function rm_lxc(lxc_id)
-    local inf1 = docker('POST', '/containers/'..lxc_id..'/kill')
+    if lxc_id == nil then
+        log.info('Failed to remove container: id is nil')
+        return nil
+    end
+    local inf1 = docker('POST', '/containers/%s/kill', nil, lxc_id)
     if not inf1 then
         return
     end
-    local inf2 = docker('DELETE', '/containers/'..lxc_id)
+    local inf2 = docker('DELETE', '/containers/%s', nil, lxc_id)
     if not inf2 then
         return
     end
     log.info('removed container %s', lxc_id)
 end
-
---Fuction remove old linux container
-
-local function remove_old_containers()
-    log.info('begin removing old containers')
-    local inf = docker('GET', '/containers/json?all=1')
-    if not inf then
-        return
-    end
-    for _, i in ipairs(inf) do
-        if string.find(i.Command, 'container.lua', nil, true) then
-            rm_lxc(i.Id)
-        end
-    end
-    log.info('finish removing old containers')
-end
-
--- Function start container
 
 local function remove_container(user_id)
     local user_info = lxc[user_id]
@@ -101,6 +99,23 @@ local function remove_container(user_id)
     lxc[user_id] = nil
 end
 
+-- Function remove old linux container
+local function remove_old_containers()
+    log.info('begin removing old containers')
+    local inf = docker('GET', '/containers/json?all=1')
+    if not inf then
+        return
+    end
+    for _, i in ipairs(inf) do
+        log.info("container: %s", json.encode(inf))
+        if i.Command:find('container.lua', nil, true) then
+            rm_lxc(i.Id)
+        end
+    end
+    log.info('finish removing old containers')
+end
+
+-- Function start container
 local function start_container(user_id, user_ip)
     lxc[user_id] = { ip = user_ip, time = os.time() }
     ipt[user_ip] = ipt[user_ip] + 1
@@ -122,11 +137,16 @@ local function start_container(user_id, user_ip)
         log.error('failed to create container')
         return false
     end
+
     local lxc_id = inf.Id
+    if lxc_id == nil then
+        log.error("failed to start container: lxc_id is nil [%s]",
+                   json.encode(inf))
+    end
     lxc[user_id].lxc_id = lxc_id
 
     -- Start container
-    local inf = docker('POST', '/containers/'..lxc_id..'/start')
+    local inf = docker('POST', '/containers/%s/start', nil, lxc_id)
     if not inf then
         log.error('failed to start container')
         remove_container(user_id)
@@ -134,7 +154,7 @@ local function start_container(user_id, user_ip)
     end
 
     -- Get container information
-    local inf = docker('GET', '/containers/'..lxc_id..'/json')
+    local inf = docker('GET', '/containers/%s/json', nil, lxc_id)
     if not inf or not inf.NetworkSettings or
        not inf.NetworkSettings.IPAddress then
         log.error('failed to get information about container')
@@ -147,7 +167,8 @@ local function start_container(user_id, user_ip)
 
     -- Connect to container
     for i = 0, 20 do -- Start new socket connection
-        log.debug('connecting to %s:%s', lxc[user_id].host, CONTAINER_PORT)
+        -- log.verbose('connecting to %s:%s', lxc[user_id].host, CONTAINER_PORT)
+        -- log.verbose('connecting to %s:%s', lxc[user_id].host, CONTAINER_PORT)
         local s = socket.tcp_connect(host, CONTAINER_PORT)
         if s then
             -- Add delimiter for multiline commands
@@ -169,14 +190,15 @@ end
 
 local function clear_lxc()
     while 1 do
-        log.debug('Started remove unused container')
-        t = os.time()
-        for k,v in pairs(lxc) do
+        log.verbose('Started remove unused container')
+        local t = os.time()
+        for k, v in pairs(lxc) do
             if (t - v.time) >= TIME_DIFF then
+                log.verbose('Removing container %s', k)
                 remove_container(k)
             end
         end
-        log.debug('Stopped remove unused conainer')
+        log.verbose('Stopped remove unused conainer')
         fiber.sleep(CLEANING_PERIOD)
     end
 end
@@ -191,14 +213,16 @@ local function send_error(self, data, user_id)
     return self:render({ text = data })
 end
 
+local user_id_fmt = '%s//%s'
+
 -- Handler for request from try.tarantool page
 local function handler (self)
     local user_ip = self.headers['x-real-ip'] or
-        self.headers['x-forwarded-for'] or self.peer.host
-    local user_id = self:cookie('id')  -- Get cookie with id information
-    if user_id == nil then -- Set cookie with id for new users
-        user_id = user_ip..'//'..tostring(math.random(0, 65000))
-    end
+                    self.headers['x-forwarded-for'] or
+                    self.peer.host
+    -- Get cookie with id information OR set cookie with id for new users
+    local user_id = self:cookie('id') or user_id_fmt:format(user_ip,
+             tostring(math.random(0, 65000)))
 
     if not ipt[user_ip] then ipt[user_ip] = 0 end
 
@@ -254,9 +278,10 @@ local function start(host, port)
         error('Usage: start(host, port)')
     end
 
-    while next(fio.glob('/var/run/docker.sock')) == nil do
-        fiber.sleep(0.5)
-    end
+    -- while next(fio.glob('/var/run/docker.sock')) == nil do
+    --    fiber.sleep(0.5)
+    --end
+    fiber.sleep(5)
 
     os.execute('docker build -t tarantool/try ' .. APP_DIR .. '/container')
     -- prevent access from containers to outside world
