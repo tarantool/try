@@ -24,6 +24,22 @@ script:
   - git clone https://github.com/packpack/packpack.git
   - ./packpack/packpack
 
+jobs:
+  include:
+    - stage: deploy
+      env: OS=el DIST=7 PACK=rpm
+      if: branch = master
+      script:
+        - "( apt-get update -y && apt-get install openssh-client -y ) || ( which ssh-agent || yum install openssh -y )"
+
+        - openssl aes-256-cbc -K $encrypted_7d0606e8c06a_key -iv $encrypted_7d0606e8c06a_iv
+                                            -in try-deployer.enc -out try-deployer -d
+        - eval $(ssh-agent -s)
+        - chmod 600 try-deployer
+        - ssh-add try-deployer
+
+        - ssh -o "StrictHostKeyChecking no" try-deployer@try.tarantool.org
+
 notifications:
   email: true
   irc: false
