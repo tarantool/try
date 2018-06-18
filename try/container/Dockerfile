@@ -1,4 +1,4 @@
-FROM tarantool/tarantool:1
+FROM tarantool/tarantool:2
 MAINTAINER Roman Tsisyk <roman@tarantool.org>
 
 ADD container.lua /opt/tarantool
