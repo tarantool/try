@@ -28,7 +28,7 @@ jobs:
   include:
     - stage: deploy
       env: OS=el DIST=7 PACK=rpm
-      if: branch = master
+      if: branch IN (master, stable, lts)
       script:
         - "( apt-get update -y && apt-get install openssh-client -y ) || ( which ssh-agent || yum install openssh -y )"
 
