@@ -38,7 +38,7 @@ jobs:
         - chmod 600 try-deployer
         - ssh-add try-deployer
 
-        - ssh -o "StrictHostKeyChecking no" try-deployer@try.tarantool.org STABLE
+        - ssh -o "StrictHostKeyChecking no" try-deployer@try.tarantool.org LTS
 
 notifications:
   email: true
