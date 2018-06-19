@@ -24,7 +24,7 @@
         $('body').terminal(
           function(command, term) {
             if (command) {
-              command = "/lts/tarantool?command=" + encodeURI(command)
+              command = "/tarantool?command=" + encodeURI(command)
               $.get(command,
                 function(data) {
                   console.log(data);
