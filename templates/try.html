@@ -14,7 +14,7 @@
       Try command 'help' to get help.
       <script>
         jQuery(document).ready(function($){
-          $.get("/tarantool?command=box.info.version",{},
+          $.get("/lts/tarantool?command=box.info.version",{},
             function(data) {
               if (data.charAt(0) == 'S')
                 alert(data);
