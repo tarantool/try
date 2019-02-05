@@ -676,7 +676,7 @@ terminal .terminal-output > div {
     padding-bottom: 0;
 }
 .terminal .cmd {
-    margin-bottom: 10px;
+    margin-bottom: 40px;
 }
 @supports (--css: variables) {
     .terminal,
