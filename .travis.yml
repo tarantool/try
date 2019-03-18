@@ -15,9 +15,9 @@ jobs:
     - name: "Fedora 27: deploy RPM"
       env: OS=fedora DIST=27
     - name: "Fedora 28: deploy RPM"
-      env: OS=fedora DIST=26
+      env: OS=fedora DIST=28
     - name: "Fedora 29: deploy RPM"
-      env: OS=fedora DIST=27
+      env: OS=fedora DIST=29
 
 script:
   - git clone https://github.com/packpack/packpack.git
