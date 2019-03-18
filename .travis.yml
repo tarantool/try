@@ -1,44 +1,63 @@
 sudo: required
+
 services:
   - docker
 
-env:
-    global:
-      - PRODUCT=tarantool-try
-    matrix:
-#      - OS=el DIST=6 PACK=rpm
-      - OS=el DIST=7 PACK=rpm
-#      - OS=fedora DIST=23 PACK=rpm
-      - OS=fedora DIST=24 PACK=rpm
-#      - OS=fedora DIST=rawhide PACK=rpm
-#      - OS=ubuntu DIST=precise PACK=deb
-#      - OS=ubuntu DIST=trusty PACK=deb
-#      - OS=ubuntu DIST=wily PACK=deb
-#      - OS=ubuntu DIST=xenial PACK=deb
-#      - OS=debian DIST=wheezy PACK=deb
-#      - OS=debian DIST=jessie PACK=deb
-#      - OS=debian DIST=stretch PACK=deb
-#      - OS=debian DIST=sid PACK=deb
+git:
+    depth: 100500
+
+jobs:
+  include:
+    - name: "CentOS 7: deploy RPM"
+      env: OS=el DIST=7
+    - name: "Fedora 26: deploy RPM"
+      env: OS=fedora DIST=26
+    - name: "Fedora 27: deploy RPM"
+      env: OS=fedora DIST=27
+    - name: "Fedora 28: deploy RPM"
+      env: OS=fedora DIST=26
+    - name: "Fedora 29: deploy RPM"
+      env: OS=fedora DIST=27
 
 script:
   - git clone https://github.com/packpack/packpack.git
   - ./packpack/packpack
 
-jobs:
-  include:
-    - stage: deploy
-      env: OS=el DIST=7 PACK=rpm
-      if: branch = master
-      script:
-        - "( apt-get update -y && apt-get install openssh-client -y ) || ( which ssh-agent || yum install openssh -y )"
+before_deploy:
+  - ls -l build/
 
-        - openssl aes-256-cbc -K $encrypted_7d0606e8c06a_key -iv $encrypted_7d0606e8c06a_iv
-                                            -in try-deployer.enc -out try-deployer -d
-        - eval $(ssh-agent -s)
-        - chmod 600 try-deployer
-        - ssh-add try-deployer
-
-        - ssh -o "StrictHostKeyChecking no" try-deployer@try.tarantool.org DEV
+deploy:
+  # Deploy packages to PackageCloud
+  - provider: packagecloud
+    username: ${PACKAGECLOUD_USER}
+    repository: "1_9"
+    token: ${PACKAGECLOUD_TOKEN}
+    dist: ${OS}/${DIST}
+    package_glob: build/*.{rpm,deb}
+    skip_cleanup: true
+    on:
+      branch: master
+      condition: -n "${OS}" && x"${TRAVIS_EVENT_TYPE}" != x"cron"
+  - provider: packagecloud
+    username: ${PACKAGECLOUD_USER}
+    repository: "1_10"
+    token: ${PACKAGECLOUD_TOKEN}
+    dist: ${OS}/${DIST}
+    package_glob: build/*.{rpm,deb}
+    skip_cleanup: true
+    on:
+      branch: master
+      condition: -n "${OS}" && x"${TRAVIS_EVENT_TYPE}" != x"cron"
+  - provider: packagecloud
+    username: ${PACKAGECLOUD_USER}
+    repository: "2x"
+    token: ${PACKAGECLOUD_TOKEN}
+    dist: ${OS}/${DIST}
+    package_glob: build/*.{rpm,deb}
+    skip_cleanup: true
+    on:
+      branch: master
+      condition: -n "${OS}" && x"${TRAVIS_EVENT_TYPE}" != x"cron"
 
 notifications:
   email: true
