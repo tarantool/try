@@ -1,0 +1,21 @@
+cartridge-app:
+  cluster_cookie: password
+cartridge-app.router:
+  workdir: ./tmp/1
+  advertise_uri: localhost:3301
+  http_port: 8081
+  auth_enabled: true
+  memtx_memory: 33554432
+  vinyl_memory: 0
+cartridge-app.instance-2:
+  workdir: ./tmp/2
+  advertise_uri: localhost:3302
+  http_enabled: False
+  memtx_memory: 33554432
+  vinyl_memory: 0
+cartridge-app.instance-3:
+  workdir: ./tmp/3
+  advertise_uri: localhost:3303
+  http_enabled: False
+  memtx_memory: 33554432
+  vinyl_memory: 0

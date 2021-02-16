@@ -1,0 +1,9 @@
+/build
+/flow-typed
+/flow-typed/npm
+/public
+/scripts
+/src/generated
+/config
+/scripts
+/src/start.js
