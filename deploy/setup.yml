@@ -1,0 +1,54 @@
+- name: Log into registry
+  docker_login:
+    registry: registry.gitlab.com
+    username: "{{ GITLAB_USERNAME }}"
+    password: "{{ GITLAB_PASSWORD }}"
+    reauthorize: yes
+
+- name: Pull latest cartridge for try server
+  docker_image:
+    name: registry.gitlab.com/tarantool/tarantool.io/try-cartridge:app
+    source: pull
+    force: true
+
+- name: Tag image cartridge image properly
+  docker_image:
+    name: registry.gitlab.com/tarantool/tarantool.io/try-cartridge:app
+    repository: tarantool/cartridge:latest
+    force_tag: yes
+    source: local
+
+- name: Pull trycartridge WebApp
+  docker_image:
+    name: registry.gitlab.com/tarantool/tarantool.io/try-cartridge:latest
+    source: pull
+    force: true
+
+- name: Add tag trycartridge:latest to image
+  docker_image:
+    name: registry.gitlab.com/tarantool/tarantool.io/try-cartridge:latest
+    repository: trycartridge:latest
+    force_tag: yes
+    source: local
+
+- name: Start WebApp
+  include_role:
+    name: mhutter.docker-systemd-service
+  vars:
+    container_name: trycartridge
+    container_image: trycartridge:latest
+    container_docker_pull: no
+    container_args: --network=trycartridge
+    container_env:
+      REDIS: redis
+      DATABASE_URL: "{{ DATABASE_URL }}"
+      SENTRY_DSN: "{{ SENTRY_DSN }}"
+      SENDGRID_API_KEY: "{{ SENDGRID_API_KEY }}"
+      RECAPTCHA_PRIVATE_KEY: "{{ RECAPTCHA_PRIVATE_KEY }}"
+      RECAPTCHA_PUBLIC_KEY: "{{ RECAPTCHA_PUBLIC_KEY }}"
+    container_volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - '/var/log/trycartridge:/var/log'
+      - '/var/www/trycartridge/static:/app/staticfiles'
+    container_ports:
+      - '5000:5000'

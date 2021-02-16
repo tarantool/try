@@ -1,0 +1,14 @@
+---
+- name: Deploy try-cartridge service
+  hosts: all
+  become: yes
+  become_method: sudo
+  tasks:
+    - name: Update trycartridge
+      include: setup.yml
+
+    - name: Restart trycartridge service
+      systemd:
+        state: restarted
+        daemon_reload: yes
+        name: trycartridge_container
