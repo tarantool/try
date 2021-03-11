@@ -1,0 +1,16 @@
+# https://support.crowdin.com/configuration-file/
+# https://support.crowdin.com/cli-tool-v3/#configuration
+
+"project_id" : "445088"
+"api_token_env": "CROWDIN_PERSONAL_TOKEN"
+"base_path" : "./front/tutorial"
+"base_url": "https://crowdin.com"
+"preserve_hierarchy": true
+
+files: [
+ {
+  "source" : "/ru/*.md",
+  "translation" : "/%locale%/%file_name%.md",
+  "update_option" : "update_as_unapproved",
+ }
+]
