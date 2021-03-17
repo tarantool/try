@@ -225,7 +225,7 @@ curl -X POST --data "video_id=ab45321d-8f79-49ec-a921-c2896c4a3eba,user_id=bb453
 
 Получится, примерно вот так:
 
-![%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.02.18_PM.png](%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.02.18_PM.png)
+![images/console.png](images/console.png)
 
 ## Смотрим на данные [1 минута]
 
@@ -236,17 +236,17 @@ curl -X POST --data "video_id=ab45321d-8f79-49ec-a921-c2896c4a3eba,user_id=bb453
 
 Смотрим, что все на месте и переходим дальше.
 
-![%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.41.50_PM.png](%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.41.50_PM.png)
+![images/hosts.png](images/hosts.png)
 
-![%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.42.15_PM.png](%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.42.15_PM.png)
+![images/likes.png](images/likes.png)
 
 ## Масштабируем кластер [1 минута]
 
 Создадим второй шард. Нажимаем на вкладку "Cluster", выбираем `s2-master` и нажимаем "Configure". Выбираем роли так как на картинке:
 
-![%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.42.24_PM.png](%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.42.24_PM.png)
+![images/s1-master.png](images/s1-master.png)
 
-![%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.54.18_PM.png](%5BTutorial%5D%20%D0%A0%D0%B0%D0%B7%D1%80%D0%B0%D0%B1%D0%BE%D1%82%D1%87%D0%B8%D0%BA%D0%B8%20c071a0d780984de2a569f79c42811dd5/__2020-11-17__4.54.18_PM.png)
+![images/configuring-server.png](images/configuring-server.png)
 
 Шелкаем на нужные роли и создаем шард (репликасет). 
 
