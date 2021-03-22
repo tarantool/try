@@ -12,5 +12,11 @@ files: [
   "source" : "/ru/*.md",
   "translation" : "/%locale%/%file_name%.md",
   "update_option" : "update_as_unapproved",
+
+  "languages_mapping": {
+    "locale": {
+      "en": "en",
+    }
+  },
  }
 ]
