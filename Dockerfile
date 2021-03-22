@@ -1,58 +1,63 @@
-FROM tarantool/tarantool:1.8
+FROM node:14 AS front
 
-RUN apk add --no-cache \
-    ca-certificates \
-    curl \
-    openssl
 
-ENV DOCKER_BUCKET get.docker.com
-ENV DOCKER_VERSION 1.12.1
-ENV DOCKER_SHA256 05ceec7fd937e1416e5dce12b0b6e1c655907d349d52574319a1e875077ccb79
+RUN curl -L https://tarantool.io/live/2.7/installer.sh | bash
+RUN apt install -y tarantool cartridge-cli
+
+RUN mkdir /build
+WORKDIR /build
+
+COPY analytics ./analytics
+COPY front ./front
+COPY \
+    init.lua \
+    cartridge.pre-build \
+    cartridge.post-build \
+    cartridge-app-scm-1.rockspec \
+    Makefile \
+    stateboard.init.lua \
+    ./
+
+RUN cartridge pack tgz --version 1.0.0 --debug
+
+
+FROM centos:8
+LABEL maintainer="artembo@me.com"
+
+RUN groupadd tarantool && adduser -g tarantool tarantool
+
+RUN curl -L https://tarantool.io/live/2.7/installer.sh | bash && yum install -y tarantool
 
 RUN set -x \
-    && curl -fSL "https://${DOCKER_BUCKET}/builds/Linux/x86_64/docker-${DOCKER_VERSION}.tgz" -o docker.tgz\
-    && echo "${DOCKER_SHA256} *docker.tgz" | sha256sum -c - \
-    && tar -xzvf docker.tgz \
-    && mv docker/* /usr/local/bin/ \
-    && rmdir docker \
-    && rm docker.tgz \
-    && docker -v
+    && yum -y install git gcc make cmake unzip tarantool-devel iptables cartridge-cli \
+    && : "---------- basic git setup ----------" \
+    && git config --global user.email "you@example.com" \
+    && git config --global user.name "Example User" \
+    && rm -rf /var/cache/yum
 
-RUN apk add --no-cache \
-    btrfs-progs \
-    e2fsprogs \
-    e2fsprogs-extra \
-    iptables \
-    xfsprogs \
-    xz \
-    bash
-
-# set up subuid/subgid so that "--userns-remap=default" works out-of-the-box
 RUN set -x \
-    && addgroup -S dockremap \
-    && adduser -S -G dockremap dockremap \
-    && echo 'dockremap:165536:65536' >> /etc/subuid \
-    && echo 'dockremap:165536:65536' >> /etc/subgid
+    && : "---------- gosu ----------" \
+    && gpg --keyserver pool.sks-keyservers.net --recv-keys \
+       B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && curl -o /usr/local/bin/gosu -SL \
+       "https://github.com/tianon/gosu/releases/download/1.2/gosu-amd64" \
+    && curl -o /usr/local/bin/gosu.asc -SL \
+       "https://github.com/tianon/gosu/releases/download/1.2/gosu-amd64.asc" \
+    && gpg --verify /usr/local/bin/gosu.asc \
+    && rm /usr/local/bin/gosu.asc \
+    && rm -rf /root/.gnupg/ \
+    && chmod +x /usr/local/bin/gosu
 
-ENV DIND_COMMIT 3b5fac462d21ca164b3778647420016315289034
+COPY iptables.rules /tmp/iptables.rules
+RUN rm /sbin/ping /usr/bin/ping
 
-RUN wget "https://raw.githubusercontent.com/docker/docker/${DIND_COMMIT}/hack/dind" -O /usr/local/bin/dind \
-    && chmod +x /usr/local/bin/dind
+COPY --from=front /build/cartridge-app-1.0.0-0.tar.gz /opt
+RUN cd /opt && tar -xf /opt/cartridge-app-1.0.0-0.tar.gz
 
-ENV DOCKER_HOST=tcp://127.0.0.1:12345
+RUN chown -R tarantool:tarantool /opt/cartridge-app
 
-ADD https://github.com/jwilder/forego/releases/download/v0.16.1/forego /usr/local/bin/forego
-RUN chmod u+x /usr/local/bin/forego
-COPY Procfile /opt/tarantool
+WORKDIR /opt/cartridge-app
 
-COPY start.lua /opt/tarantool/
-COPY try/ /usr/local/share/tarantool/try/
-COPY templates/ /usr/local/share/tarantool/try/templates/
+COPY instances.yml run.sh ./
 
-COPY dockerd-entrypoint.sh /usr/local/bin/
-
-VOLUME /var/lib/docker
-EXPOSE 2375
-
-ENTRYPOINT ["dockerd-entrypoint.sh"]
-CMD ["forego", "start", "-r"]
+CMD ./run.sh
