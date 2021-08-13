@@ -305,7 +305,7 @@ curl -X POST --data "video_id=...&user_id=..." <ip:port>/like_video
 реальной жизни это и лишено смысла, но это поможет нам понять как
 работает шардирование. А точнее параметр `sharding_key`.
 
-Для спейса `likes` мы указали `sharding_key` ---
+Для спейса `likes` мы указали `sharding_key` —
 `video_id`. Такой же `sharding_key` мы указали и
 для спейса `videos`. Это означает, что лайки будут храниться
 на том же Storage, на котором хранится и видео. Это обеспечивает
@@ -391,7 +391,7 @@ brew install cartridge-cli
 [тут](https://github.com/tarantool/cartridge-cli).
 
 -   склонируйте репозиторий
-    [https://github.com/tarantool/try](https://github.com/tarantool/try-tarantool-example)
+    [https://github.com/tarantool/try-tarantool](https://github.com/tarantool/try-tarantool)
 
 В данном репозитории все готово к работе - в папке со склонированным
 примером выполните:
