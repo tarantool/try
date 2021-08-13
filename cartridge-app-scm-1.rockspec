@@ -8,10 +8,10 @@ dependencies = {
     'tarantool',
     'lua >= 5.1',
     'checks == 3.1.0-1',
-    'cartridge == scm-1',
+    'cartridge == 2.6.0',
     'analytics == scm-1',
     'cartridge-extensions == scm-1',
-    'crud == 0.3.0',
+    'crud',
 }
 
 build = {
